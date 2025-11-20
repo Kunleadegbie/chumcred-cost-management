@@ -38,6 +38,6 @@ def admin_dashboard():
             else:
                 if st.button(f"Unblock {username}", key=f"unblock_{username}"):
                     update_status(username, "active")
-                    st.experimental_rerun()
+                    st.rerun()
 
     st.markdown("---")

@@ -1,18 +1,16 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+import os
+from PIL import Image
 from io import BytesIO
-from modules.calculators import (
-    calculate_metrics
-)
-from modules.explanations import (
-    metric_explanations
-)
+
+# INTERNAL MODULES
+from modules.calculators import calculate_metrics
+from modules.explanations import metric_explanations
 from modules.database import init_db
 from modules.auth import login_screen
 from modules.admin_ui import admin_dashboard
-
-
 
 # -----------------------------------------------------
 # PAGE CONFIG
@@ -23,27 +21,48 @@ st.set_page_config(
     layout="wide"
 )
 
-# Initialize database on startup
+# -----------------------------------------------------
+# INITIALIZE DB + SESSION
+# -----------------------------------------------------
 init_db()
 
-# Create session variables
 if "logged_in" not in st.session_state:
     st.session_state["logged_in"] = False
+    st.session_state["username"] = None
+    st.session_state["role"] = None
+
+# -----------------------------------------------------
+# LOGIN SCREEN (STOP EVERYTHING ELSE IF NOT LOGGED IN)
+# -----------------------------------------------------
+if not st.session_state["logged_in"]:
+    login_screen()
+    st.stop()      # 🔥 Critical — prevents the rest of the page from rendering
+
+
+# -----------------------------------------------------
+# SIDEBAR USER INFO + LOGOUT
+# -----------------------------------------------------
+st.sidebar.success(f"Logged in as: {st.session_state['username']} ({st.session_state['role']})")
+
+if st.sidebar.button("Logout"):
+    st.session_state.clear()
+    st.experimental_rerun()
+
 
 # -----------------------------------------------------
 # COMPANY LOGO
 # -----------------------------------------------------
-import os
-from PIL import Image
-
 logo_path = os.path.join("assets", "logo.png")
-
 try:
     logo = Image.open(logo_path)
-    st.image(logo, width=150)  # adjust width as needed
+    st.image(logo, width=150)
 except Exception as e:
     st.warning(f"Logo not found or unreadable: {e}")
 
+
+# -----------------------------------------------------
+# TITLE & INTRO
+# -----------------------------------------------------
 st.title("💼 Chumcred Limited – Cost Management Assessment Tool")
 st.markdown("""
 This tool helps organizations assess cost efficiency, financial discipline, and 
@@ -53,7 +72,19 @@ Enter your financial figures below to get instant analysis with explanations.
 
 
 # -----------------------------------------------------
-# INPUTS
+# ADMIN DASHBOARD OPTION
+# -----------------------------------------------------
+if st.session_state["role"] == "admin":
+    st.sidebar.markdown("### ⚙ Admin Menu")
+    admin_option = st.sidebar.selectbox("Admin Actions", ["Use App", "Manage Users"])
+
+    if admin_option == "Manage Users":
+        admin_dashboard()
+        st.stop()    # Stop here and do NOT show the cost calculator
+
+
+# -----------------------------------------------------
+# MAIN PAGE INPUTS (ONLY SHOW AFTER LOGIN)
 # -----------------------------------------------------
 st.subheader("📥 Enter Company Financial Data")
 
@@ -72,30 +103,6 @@ with col2:
     tco = st.number_input("Total Cost of Ownership (e.g., CapEx + OpEx)", min_value=0.0, value=0.0)
 
 st.markdown("---")
-
-# -------------------------------
-# LOGIN LOGIC
-# -------------------------------
-if not st.session_state["logged_in"]:
-    login_screen()
-    st.stop()
-
-st.sidebar.success(f"Logged in as: {st.session_state['username']} ({st.session_state['role']})")
-
-if st.sidebar.button("Logout"):
-    st.session_state.clear()
-    st.experimental_rerun()
-
-# -------------------------------
-# ADMIN DASHBOARD (IF ADMIN)
-# -------------------------------
-if st.session_state["role"] == "admin":
-    st.sidebar.markdown("### ⚙ Admin Menu")
-    admin_option = st.sidebar.selectbox("Admin Actions", ["Use App", "Manage Users"])
-
-    if admin_option == "Manage Users":
-        admin_dashboard()
-        st.stop()
 
 
 # -----------------------------------------------------
@@ -117,7 +124,6 @@ if st.button("🔍 Analyse Cost Metrics"):
     st.subheader("📊 Cost Management Result Dashboard")
 
     df = pd.DataFrame(results)
-
     st.dataframe(df, width=1200, height=500)
 
     # -----------------------------------------------------
@@ -136,4 +142,3 @@ if st.button("🔍 Analyse Cost Metrics"):
     )
 
     st.success("Analysis Complete – powered by Chumcred Limited.")
-

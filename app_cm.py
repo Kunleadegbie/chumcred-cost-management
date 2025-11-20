@@ -46,7 +46,7 @@ st.sidebar.success(f"Logged in as: {st.session_state['username']} ({st.session_s
 
 if st.sidebar.button("Logout"):
     st.session_state.clear()
-    st.experimental_rerun()
+    st.rerun()
 
 
 # -----------------------------------------------------

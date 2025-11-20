@@ -1,0 +1,104 @@
+import streamlit as st
+import pandas as pd
+import numpy as np
+from io import BytesIO
+from modules.calculators import (
+    calculate_metrics
+)
+from modules.explanations import (
+    metric_explanations
+)
+
+
+
+# -----------------------------------------------------
+# PAGE CONFIG
+# -----------------------------------------------------
+st.set_page_config(
+    page_title="Chumcred Limited – Cost Management Assessment Tool",
+    page_icon="💼",
+    layout="wide"
+)
+
+# -----------------------------------------------------
+# COMPANY LOGO
+# -----------------------------------------------------
+import os
+from PIL import Image
+
+logo_path = os.path.join("assets", "logo.png")
+
+try:
+    logo = Image.open(logo_path)
+    st.image(logo, width=150)  # adjust width as needed
+except Exception as e:
+    st.warning(f"Logo not found or unreadable: {e}")
+
+st.title("💼 Chumcred Limited – Cost Management Assessment Tool")
+st.markdown("""
+This tool helps organizations assess cost efficiency, financial discipline, and 
+overall business performance using key cost-management metrics.  
+Enter your financial figures below to get instant analysis with explanations.
+""")
+
+
+# -----------------------------------------------------
+# INPUTS
+# -----------------------------------------------------
+st.subheader("📥 Enter Company Financial Data")
+
+col1, col2 = st.columns(2)
+
+with col1:
+    budgeted_cost = st.number_input("Budgeted Cost", min_value=0.0, value=0.0)
+    actual_cost = st.number_input("Actual Cost", min_value=0.0, value=0.0)
+    operating_expense = st.number_input("Operating Expense", min_value=0.0, value=0.0)
+    revenue = st.number_input("Revenue", min_value=0.0, value=0.0)
+
+with col2:
+    investment = st.number_input("Investment Amount", min_value=0.0, value=0.0)
+    annual_cash_inflow = st.number_input("Annual Cash Inflow", min_value=0.0, value=0.0)
+    cost_to_serve = st.number_input("Cost to Serve", min_value=0.0, value=0.0)
+    tco = st.number_input("Total Cost of Ownership (e.g., CapEx + OpEx)", min_value=0.0, value=0.0)
+
+st.markdown("---")
+
+# -----------------------------------------------------
+# CALCULATE RESULTS
+# -----------------------------------------------------
+if st.button("🔍 Analyse Cost Metrics"):
+
+    results = calculate_metrics(
+        budgeted_cost,
+        actual_cost,
+        operating_expense,
+        revenue,
+        investment,
+        annual_cash_inflow,
+        cost_to_serve,
+        tco
+    )
+
+    st.subheader("📊 Cost Management Result Dashboard")
+
+    df = pd.DataFrame(results)
+
+    st.dataframe(df, width=1200, height=500)
+
+    # -----------------------------------------------------
+    # EXCEL DOWNLOAD
+    # -----------------------------------------------------
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
+        df.to_excel(writer, index=False, sheet_name="Cost Analysis")
+    excel_data = output.getvalue()
+
+    st.download_button(
+        label="⬇️ Download Excel Report",
+        data=excel_data,
+        file_name="chumcred_cost_management_report.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+
+    st.success("Analysis Complete – powered by Chumcred Limited.")
+

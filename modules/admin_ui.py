@@ -34,7 +34,7 @@ def admin_dashboard():
             if status == "active":
                 if st.button(f"Block {username}", key=f"block_{username}"):
                     update_status(username, "blocked")
-                    st.experimental_rerun()
+                    st.rerun()
             else:
                 if st.button(f"Unblock {username}", key=f"unblock_{username}"):
                     update_status(username, "active")

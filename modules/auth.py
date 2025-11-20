@@ -26,6 +26,6 @@ def login_screen():
         st.session_state["role"] = role
 
         st.success(f"Welcome {username}!")
-        st.experimental_rerun()
+        st.rerun()
 
     return None

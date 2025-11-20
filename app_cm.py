@@ -8,6 +8,9 @@ from modules.calculators import (
 from modules.explanations import (
     metric_explanations
 )
+from modules.database import init_db
+from modules.auth import login_screen
+from modules.admin_ui import admin_dashboard
 
 
 
@@ -19,6 +22,13 @@ st.set_page_config(
     page_icon="💼",
     layout="wide"
 )
+
+# Initialize database on startup
+init_db()
+
+# Create session variables
+if "logged_in" not in st.session_state:
+    st.session_state["logged_in"] = False
 
 # -----------------------------------------------------
 # COMPANY LOGO
@@ -62,6 +72,31 @@ with col2:
     tco = st.number_input("Total Cost of Ownership (e.g., CapEx + OpEx)", min_value=0.0, value=0.0)
 
 st.markdown("---")
+
+# -------------------------------
+# LOGIN LOGIC
+# -------------------------------
+if not st.session_state["logged_in"]:
+    login_screen()
+    st.stop()
+
+st.sidebar.success(f"Logged in as: {st.session_state['username']} ({st.session_state['role']})")
+
+if st.sidebar.button("Logout"):
+    st.session_state.clear()
+    st.experimental_rerun()
+
+# -------------------------------
+# ADMIN DASHBOARD (IF ADMIN)
+# -------------------------------
+if st.session_state["role"] == "admin":
+    st.sidebar.markdown("### ⚙ Admin Menu")
+    admin_option = st.sidebar.selectbox("Admin Actions", ["Use App", "Manage Users"])
+
+    if admin_option == "Manage Users":
+        admin_dashboard()
+        st.stop()
+
 
 # -----------------------------------------------------
 # CALCULATE RESULTS
